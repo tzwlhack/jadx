@@ -23,7 +23,9 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultCaret;
 
+import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.TokenMakerFactory;
 import org.fife.ui.rtextarea.SearchContext;
 import org.fife.ui.rtextarea.SearchEngine;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jadx.core.utils.StringUtils;
+import jadx.core.utils.exceptions.JadxRuntimeException;
 import jadx.gui.settings.JadxSettings;
 import jadx.gui.treemodel.JClass;
 import jadx.gui.treemodel.JNode;
@@ -47,12 +50,22 @@ public abstract class AbstractCodeArea extends RSyntaxTextArea {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractCodeArea.class);
 
+	static {
+		TokenMakerFactory tokenMakerFactory = TokenMakerFactory.getDefaultInstance();
+		if (tokenMakerFactory instanceof AbstractTokenMakerFactory) {
+			AbstractTokenMakerFactory atmf = (AbstractTokenMakerFactory) tokenMakerFactory;
+			atmf.putMapping("text/smali", "jadx.gui.ui.codearea.SmaliTokenMaker");
+		} else {
+			throw new JadxRuntimeException("Unexpected TokenMakerFactory instance: " + tokenMakerFactory.getClass());
+		}
+	}
+
 	protected final ContentPanel contentPanel;
 	protected final JNode node;
 
-	public AbstractCodeArea(ContentPanel contentPanel) {
+	public AbstractCodeArea(ContentPanel contentPanel, JNode node) {
 		this.contentPanel = contentPanel;
-		this.node = contentPanel.getNode();
+		this.node = node;
 
 		setMarkOccurrences(false);
 		setEditable(false);
